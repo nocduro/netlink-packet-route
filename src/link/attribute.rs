@@ -431,15 +431,14 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
         let payload = buf.value();
         Ok(match buf.kind() {
             IFLA_VFINFO_LIST => {
-                let err =
-                    |payload| format!("invalid IFLA_VFINFO_LIST {payload:?}");
+                let err = || format!("invalid IFLA_VFINFO_LIST {payload:?}");
                 if !payload.is_empty() {
                     Self::VfInfoList(
                         VecLinkVfInfo::parse(
                             &NlaBuffer::new_checked(payload)
-                                .with_context(|| err(payload))?,
+                                .with_context(err)?,
                         )
-                        .with_context(|| err(payload))?
+                        .with_context(err)?
                         .0,
                     )
                 } else {
@@ -449,26 +448,22 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 }
             }
             IFLA_VF_PORTS => {
-                let err =
-                    |payload| format!("invalid IFLA_VF_PORTS {payload:?}");
+                let err = || format!("invalid IFLA_VF_PORTS {payload:?}");
                 Self::VfPorts(
                     VecLinkVfPort::parse(
-                        &NlaBuffer::new_checked(payload)
-                            .with_context(|| err(payload))?,
+                        &NlaBuffer::new_checked(payload).with_context(err)?,
                     )
-                    .with_context(|| err(payload))?
+                    .with_context(err)?
                     .0,
                 )
             }
             IFLA_PORT_SELF => {
-                let err =
-                    |payload| format!("invalid IFLA_PORT_SELF {payload:?}");
+                let err = || format!("invalid IFLA_PORT_SELF {payload:?}");
                 Self::PortSelf(
                     LinkVfPort::parse(
-                        &NlaBuffer::new_checked(payload)
-                            .with_context(|| err(payload))?,
+                        &NlaBuffer::new_checked(payload).with_context(err)?,
                     )
-                    .with_context(|| err(payload))?,
+                    .with_context(err)?,
                 )
             }
             IFLA_PHYS_PORT_ID => {
@@ -482,16 +477,16 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 )?)
             }
             IFLA_PROTINFO => {
-                let err = |payload| {
+                let err = || {
                     format!("invalid IFLA_PROTINFO for AF_INET6 {payload:?}")
                 };
                 match interface_family {
                     AddressFamily::Inet6 => Self::ProtoInfoInet6(
                         VecLinkProtoInfoInet6::parse(
                             &NlaBuffer::new_checked(payload)
-                                .with_context(|| err(payload))?,
+                                .with_context(err)?,
                         )
-                        .with_context(|| err(payload))?
+                        .with_context(err)?
                         .0,
                     ),
                     #[cfg(any(
@@ -663,11 +658,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .into(),
             ),
             IFLA_MAP => {
-                let err =
-                    |payload| format!("Invalid IFLA_MAP value {payload:?}");
-                Self::Map(
-                    super::Map::parse(payload).with_context(|| err(payload))?,
-                )
+                let err = || format!("Invalid IFLA_MAP value {payload:?}");
+                Self::Map(super::Map::parse(payload).with_context(err)?)
             }
             IFLA_STATS => Self::Stats(
                 super::Stats::parse(

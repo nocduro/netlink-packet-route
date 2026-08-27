@@ -102,13 +102,12 @@ impl<'a, T: AsRef<[u8]> + ?Sized> Parseable<NlaBuffer<&'a T>>
                 )?)
             }
             NDTA_PARMS => {
-                let err = |payload| format!("invalid NDTA_PARMS {payload:?}");
+                let err = || format!("invalid NDTA_PARMS {payload:?}");
                 Self::Parms(
                     VecNeighbourTableParameter::parse(
-                        &NlaBuffer::new_checked(payload)
-                            .with_context(|| err(payload))?,
+                        &NlaBuffer::new_checked(payload).with_context(err)?,
                     )
-                    .with_context(|| err(payload))?
+                    .with_context(err)?
                     .0,
                 )
             }
