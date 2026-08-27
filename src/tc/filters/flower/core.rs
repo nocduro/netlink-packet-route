@@ -129,9 +129,12 @@ fn parse_bytes_16(payload: &[u8]) -> Result<[u8; 16], DecodeError> {
 }
 
 macro_rules! nla_err {
-    // Match rule that takes an argument expression
+    // `$message` is only ever stringified, so the whole message is a
+    // compile-time constant. Build it with `concat!` rather than allocating a
+    // `String`: `context` takes the message by value, so it would otherwise be
+    // formatted on every successful parse and thrown away.
     ($message:expr) => {
-        format!("failed to parse {} value", stringify!($message))
+        concat!("failed to parse ", stringify!($message), " value")
     };
 }
 
