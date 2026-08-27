@@ -6,11 +6,8 @@ use netlink_packet_core::{
 };
 
 macro_rules! nla_err {
-    // `$message` is only ever stringified, so the whole message is a
-    // compile-time constant. Build it with `concat!` rather than allocating a
-    // `String`: `context` takes the message by value, so it would otherwise be
-    // formatted on every successful parse and thrown away.
-    ($message:expr) => {
+    // Shorthand for an NLA parse error message; expands to a &'static str
+    ($message:ident) => {
         concat!("failed to parse ", stringify!($message), " value")
     };
 }

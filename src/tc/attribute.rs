@@ -133,7 +133,13 @@ impl<'a, T: AsRef<[u8]> + ?Sized> ParseableParametrized<NlaBuffer<&'a T>, &str>
                 let mut nlas = vec![];
                 for nla in NlasIterator::new(payload) {
                     let nla = nla.context("invalid TCA_STATS2")?;
-                    nlas.push(TcStats2::parse_with_param(&nla, kind).with_context(|| format!("failed to parse TCA_STATS2 for kind {kind}"),)?);
+                    let stats = TcStats2::parse_with_param(&nla, kind)
+                        .with_context(|| {
+                            format!(
+                                "failed to parse TCA_STATS2 for kind {kind}"
+                            )
+                        })?;
+                    nlas.push(stats);
                 }
                 TcAttribute::Stats2(nlas)
             }

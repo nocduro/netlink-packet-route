@@ -658,8 +658,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     .into(),
             ),
             IFLA_MAP => {
-                let err = || format!("Invalid IFLA_MAP value {payload:?}");
-                Self::Map(super::Map::parse(payload).with_context(err)?)
+                Self::Map(super::Map::parse(payload).with_context(|| {
+                    format!("Invalid IFLA_MAP value {payload:?}")
+                })?)
             }
             IFLA_STATS => Self::Stats(
                 super::Stats::parse(
