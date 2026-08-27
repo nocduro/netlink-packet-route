@@ -437,9 +437,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     Self::VfInfoList(
                         VecLinkVfInfo::parse(
                             &NlaBuffer::new_checked(payload)
-                                .context(err(payload))?,
+                                .with_context(|| err(payload))?,
                         )
-                        .context(err(payload))?
+                        .with_context(|| err(payload))?
                         .0,
                     )
                 } else {
@@ -454,9 +454,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 Self::VfPorts(
                     VecLinkVfPort::parse(
                         &NlaBuffer::new_checked(payload)
-                            .context(err(payload))?,
+                            .with_context(|| err(payload))?,
                     )
-                    .context(err(payload))?
+                    .with_context(|| err(payload))?
                     .0,
                 )
             }
@@ -466,19 +466,19 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                 Self::PortSelf(
                     LinkVfPort::parse(
                         &NlaBuffer::new_checked(payload)
-                            .context(err(payload))?,
+                            .with_context(|| err(payload))?,
                     )
-                    .context(err(payload))?,
+                    .with_context(|| err(payload))?,
                 )
             }
             IFLA_PHYS_PORT_ID => {
-                Self::PhysPortId(LinkPhysId::parse(payload).context(
-                    format!("invalid IFLA_PHYS_PORT_ID value {payload:?}"),
+                Self::PhysPortId(LinkPhysId::parse(payload).with_context(
+                    || format!("invalid IFLA_PHYS_PORT_ID value {payload:?}"),
                 )?)
             }
             IFLA_PHYS_SWITCH_ID => {
-                Self::PhysSwitchId(LinkPhysId::parse(payload).context(
-                    format!("invalid IFLA_PHYS_SWITCH_ID value {payload:?}"),
+                Self::PhysSwitchId(LinkPhysId::parse(payload).with_context(
+                    || format!("invalid IFLA_PHYS_SWITCH_ID value {payload:?}"),
                 )?)
             }
             IFLA_PROTINFO => {
@@ -489,9 +489,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     AddressFamily::Inet6 => Self::ProtoInfoInet6(
                         VecLinkProtoInfoInet6::parse(
                             &NlaBuffer::new_checked(payload)
-                                .context(err(payload))?,
+                                .with_context(|| err(payload))?,
                         )
-                        .context(err(payload))?
+                        .with_context(|| err(payload))?
                         .0,
                     ),
                     #[cfg(any(
@@ -503,23 +503,28 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                         VecLinkProtoInfoBridge::parse(&NlaBuffer::new_checked(
                             payload,
                         )?)
-                        .context(format!(
+                        .with_context(|| {
+                            format!(
                             "invalid IFLA_PROTINFO for AF_INET6 {payload:?}"
-                        ))?
+                        )
+                        })?
                         .0,
                     ),
                     _ => Self::ProtoInfoUnknown(
-                        DefaultNla::parse(buf).context(format!(
+                        DefaultNla::parse(buf).with_context(|| {
+                            format!(
                             "invalid IFLA_PROTINFO for {interface_family:?}: \
                              {payload:?}"
-                        ))?,
+                        )
+                        })?,
                     ),
                 }
             }
-            IFLA_EVENT => Self::Event(
-                LinkEvent::parse(payload)
-                    .context(format!("invalid IFLA_EVENT {payload:?}"))?,
-            ),
+            IFLA_EVENT => {
+                Self::Event(LinkEvent::parse(payload).with_context(|| {
+                    format!("invalid IFLA_EVENT {payload:?}")
+                })?)
+            }
             IFLA_NEW_NETNSID => Self::NewNetnsId(
                 parse_i32(payload).context("invalid IFLA_NEW_NETNSID value")?,
             ),
@@ -660,7 +665,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             IFLA_MAP => {
                 let err =
                     |payload| format!("Invalid IFLA_MAP value {payload:?}");
-                Self::Map(super::Map::parse(payload).context(err(payload))?)
+                Self::Map(
+                    super::Map::parse(payload).with_context(|| err(payload))?,
+                )
             }
             IFLA_STATS => Self::Stats(
                 super::Stats::parse(
@@ -671,7 +678,9 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     )
                     .as_slice(),
                 )
-                .context(format!("Invalid IFLA_STATS value {payload:?}"))?,
+                .with_context(|| {
+                    format!("Invalid IFLA_STATS value {payload:?}")
+                })?,
             ),
             IFLA_STATS64 => {
                 let payload = expand_buffer_if_small(
@@ -680,8 +689,8 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
                     "IFLA_STATS64",
                 );
                 Self::Stats64(
-                    super::Stats64::parse(payload.as_slice()).context(
-                        format!("Invalid IFLA_STATS64 value {payload:?}"),
+                    super::Stats64::parse(payload.as_slice()).with_context(
+                        || format!("Invalid IFLA_STATS64 value {payload:?}"),
                     )?,
                 )
             }
@@ -789,7 +798,7 @@ impl<'a, T: AsRef<[u8]> + ?Sized>
             }
             kind => Self::Other(
                 DefaultNla::parse(buf)
-                    .context(format!("unknown NLA type {kind}"))?,
+                    .with_context(|| format!("unknown NLA type {kind}"))?,
             ),
         })
     }
